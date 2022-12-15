@@ -3,6 +3,8 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+from sqlalchemy import Integer, ForeignKey, String, Column
+from sqlalchemy.orm import relationship
 
 app = Flask(__name__)
 app.config.from_object("project.config.Config")
@@ -16,30 +18,25 @@ app.config['SECRET_KEY'] = getenv('SECRET_KEY')
 
 admin = Admin(app, name='example_app', template_mode='bootstrap3')
 
-class Child(db.Model):
-    __tablename__ = "child"
+class User(db.Model):
+    __tablename__ = 'user'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    addresses = relationship("Address", back_populates="user")
 
-    def __init__(self, user):
-        self.username = username
+class Address(db.Model):
+    __tablename__ = 'address'
+    id = Column(Integer, primary_key=True)
+    email = Column(String)
+    user_id = Column(Integer, ForeignKey('user.id'))
 
-
-class Parent(db.Model):
-    __tablename__ = "parent"
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    children = db.Column('Child', backref='parent')
-
-    def __init__(self, user):
-        self.username = username
+    user = relationship("User", back_populates="addresses")
 
 
 # Add administrative views here
-admin.add_view(ModelView(Child, db.session))
-admin.add_view(ModelView(Parent, db.session))
+admin.add_view(ModelView(User, db.session))
+admin.add_view(ModelView(Address, db.session))
 
 @app.route("/")
 def hello_world():
